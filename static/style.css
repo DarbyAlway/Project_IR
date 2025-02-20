@@ -1,0 +1,102 @@
+/* General Reset */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+/* Body styling */
+body {
+    font-family: Arial, sans-serif;
+    background-color: #f4f4f9;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    margin: 0;
+}
+
+/* Login/Registration container */
+.login-container {
+    background-color: white;
+    padding: 60px; /* Increased padding */
+    border-radius: 10px; /* Slightly more rounded */
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    width: 700px; /* Even larger width */
+    max-width: 100%;
+}
+
+/* Heading */
+h2 {
+    text-align: center;
+    color: #333;
+    margin-bottom: 40px; /* Increased margin */
+    font-size: 40px; /* Much larger font size */
+}
+
+/* Input fields */
+.input-group {
+    margin-bottom: 40px; /* Increased margin */
+}
+
+.input-group label {
+    display: block;
+    color: #333;
+    font-size: 28px; /* Much larger font size */
+    margin-bottom: 12px; /* Adjusted margin */
+}
+
+.input-group input {
+    width: 100%;
+    padding: 20px; /* Increased padding */
+    font-size: 26px; /* Much larger font size */
+    border-radius: 8px;
+    border: 1px solid #ccc;
+    outline: none;
+    transition: border 0.3s;
+}
+
+.input-group input:focus {
+    border-color: #4CAF50;
+}
+
+/* Submit button */
+button {
+    width: 100%;
+    padding: 24px; /* Increased padding */
+    font-size: 28px; /* Much larger font size */
+    background-color: #4CAF50;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+button:hover {
+    background-color: #45a049;
+}
+
+/* Error message */
+.error-message {
+    color: red;
+    font-size: 28px; /* Much larger font size */
+    text-align: center;
+    margin-top: 30px; /* Increased margin */
+}
+
+/* Link to registration or login page */
+p {
+    text-align: center;
+    font-size: 28px; /* Much larger font size */
+    margin-top: 30px;
+}
+
+a {
+    color: #4CAF50;
+    text-decoration: none;
+}
+
+a:hover {
+    text-decoration: underline;
+}
