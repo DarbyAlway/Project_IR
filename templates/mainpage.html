@@ -1,21 +1,135 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Search Engine</title>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Recipe Search</title>
     <style>
-        body { font-family: Arial, sans-serif; text-align: center; margin: 50px; }
-        input[type="text"] { width: 300px; padding: 10px; }
-        button { padding: 10px 20px; cursor: pointer; }
+      body {
+        font-family: Arial, sans-serif;
+        margin: 20px;
+        background-color: #f4f4f4;
+      }
+      input[type="text"] {
+        padding: 10px;
+        width: 300px;
+        margin-right: 10px;
+      }
+      button {
+        padding: 10px 20px;
+      }
+      .results {
+        margin-top: 20px;
+      }
+      .result-item {
+        background-color: white;
+        padding: 10px;
+        margin-bottom: 10px;
+        border-radius: 5px;
+        box-shadow: 0 0 5px rgba(0, 0, 0, 0.1);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+      .result-item img {
+        width: 100px; /* Adjust image size */
+        height: auto;
+        border-radius: 5px;
+        object-fit: cover;
+      }
+      .result-details {
+        flex: 1;
+      }
     </style>
-</head>
-<body>
-    <h1>Search with PageRank</h1>
-    
-    <form action="/search_es_pr" method="GET">
-        <input type="text" name="query" placeholder="Enter search term..." required>
-        <button type="submit">Search</button>
-    </form>
-</body>
+    <!DOCTYPE html>
+    <html lang="en">
+      <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Recipe Search</title>
+      </head>
+      <body>
+        <h1>Recipe Search</h1>
+        <form id="search-form">
+          <input
+            type="text"
+            id="search-input"
+            placeholder="Search for recipes..."
+            spellcheck="true"
+          />
+          <button type="submit" id="search-button">Search</button>
+        </form>
+
+        <p id="corrected-query"></p>
+        <!-- Display corrected query here -->
+
+        <div class="results" id="results"></div>
+        <script>
+          // Search function that fetches data from the server
+          function searchRecipes(query) {
+            if (query) {
+              fetch("/search?q=" + encodeURIComponent(query))
+                .then((response) => response.json())
+                .then((data) => {
+                  var resultsContainer = document.getElementById("results");
+                  resultsContainer.innerHTML = ""; // Clear previous results
+
+                  // Display the corrected query only if it's different from the original query
+                  var correctedQueryElement =
+                    document.getElementById("corrected-query");
+                  if (data.corrected_query && data.corrected_query !== query) {
+                    correctedQueryElement.innerHTML = `Did you mean: <strong><a href="#" id="corrected-query-link">${data.corrected_query}</a></strong>?`;
+
+                    // Add event listener for the corrected query link
+                    document
+                      .getElementById("corrected-query-link")
+                      .addEventListener("click", function (event) {
+                        event.preventDefault(); // Prevent default link behavior
+
+                        // Update the input field with the corrected query
+                        document.getElementById("search-input").value =
+                          data.corrected_query;
+
+                        // Trigger search with the corrected query
+                        searchRecipes(data.corrected_query);
+                      });
+                  } else {
+                    correctedQueryElement.innerHTML = ""; // Clear if no correction is needed
+                  }
+
+                  data.results.forEach((recipe) => {
+                    var resultDiv = document.createElement("div");
+                    resultDiv.classList.add("result-item");
+
+                    resultDiv.innerHTML = `
+                                    <div class="result-details">
+                                        <h3>${recipe.Name}</h3>
+                                        <p>${recipe.Description}</p>
+                                        <p><strong>Author:</strong> ${recipe.AuthorName}</p>
+                                        <p><strong>Cook Time:</strong> ${recipe.CookTime}</p>
+                                        <p><strong>Instructions:</strong> ${recipe.RecipeInstructions}</p>
+                                    </div>
+                                    <img src="${recipe.Images}" alt="${recipe.Name}">
+                                `;
+                    resultsContainer.appendChild(resultDiv);
+                  });
+                })
+                .catch((error) => {
+                  console.error("Error fetching recipes:", error);
+                });
+            }
+          }
+
+          // Form submit event listener
+          document
+            .getElementById("search-form")
+            .addEventListener("submit", function (event) {
+              event.preventDefault(); // Prevent form from refreshing the page
+              var query = document.getElementById("search-input").value;
+              searchRecipes(query); // Call search function with the input value
+            });
+        </script>
+      </body>
+    </html>
+  </head>
 </html>
