@@ -50,15 +50,15 @@ def login():
         # Check if the username exists in the database
         user = User.query.filter_by(username=username).first()
         if user and check_password_hash(user.password, password):
-            return redirect(url_for('dashboard'))
+            return redirect(url_for('mainpage'))
         else:
             return render_template('login.html', message="Invalid username or password.")
     
     return render_template('login.html')
 
-@app.route('/dashboard')
-def dashboard():
-    return '<h1>Welcome to the Dashboard!</h1>'
+@app.route('/mainpage')
+def mainpage():
+    return render_template('mainpage.html')
 
 if __name__ == '__main__':
     app.run(debug=True)

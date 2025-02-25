@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Recipe Search</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f4f4f4;
+        }
+        input[type="text"] {
+            padding: 10px;
+            width: 300px;
+            margin-right: 10px;
+        }
+        button {
+            padding: 10px 20px;
+        }
+        .results {
+            margin-top: 20px;
+        }
+        .result-item {
+            background-color: white;
+            padding: 10px;
+            margin-bottom: 10px;
+            border-radius: 5px;
+            box-shadow: 0 0 5px rgba(0, 0, 0, 0.1);
+        }
+    </style>
+</head>
+<body>
+    <h1>Recipe Search</h1>
+    <input type="text" id="search-input" placeholder="Search for recipes...">
+    <button onclick="searchRecipes()">Search</button>
+
+    <div class="results" id="results"></div>
+
+    <script>
+        function searchRecipes() {
+            var query = document.getElementById("search-input").value;
+            if (query) {
+                fetch('/search?q=' + query)
+                    .then(response => response.json())
+                    .then(data => {
+                        var resultsContainer = document.getElementById("results");
+                        resultsContainer.innerHTML = ""; // Clear previous results
+
+                        data.forEach(recipe => {
+                            var resultDiv = document.createElement("div");
+                            resultDiv.classList.add("result-item");
+                            resultDiv.innerHTML = `
+                                <h3>${recipe.Name}</h3>
+                                <p>${recipe.Description}</p>
+                                <p><strong>Author:</strong> ${recipe.AuthorName}</p>
+                                <p><strong>Cook Time:</strong> ${recipe.CookTime}</p>
+                                <p><strong>Instructions:</strong> ${recipe.RecipeInstructions}</p>
+                            `;
+                            resultsContainer.appendChild(resultDiv);
+                        });
+                    });
+            }
+        }
+    </script>
+</body>
+</html>
