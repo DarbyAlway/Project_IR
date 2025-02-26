@@ -206,8 +206,15 @@ def correct_spelling(query):
     # Split the query into words
     words = query.split()
 
-    # Correct each word
-    corrected_words = [spell.correction(word) for word in words]
+    # Correct each word, using the original word if correction is None
+    corrected_words = []
+    for word in words:
+        correction = spell.correction(word)
+        # If no correction found, keep the original word
+        if correction is None:
+            corrected_words.append(word)
+        else:
+            corrected_words.append(correction)
 
     # Join corrected words back into a string
     corrected_query = " ".join(corrected_words)
