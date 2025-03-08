@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Recipe Details</title>
+    <style>
+        /* General page styles */
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f9;
+            color: #333;
+            margin: 0;
+            padding: 0;
+        }
+
+        h1 {
+            text-align: center;
+            color: #4CAF50;
+            padding: 20px;
+        }
+
+        /* Container for recipe details */
+        .recipe-container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #fff;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            border-radius: 10px;
+            margin-top: 30px;
+            text-align: center;
+        }
+
+        .recipe-container h2 {
+            font-size: 2rem;
+            margin-bottom: 20px;
+            color: #333;
+        }
+
+        .recipe-container p {
+            font-size: 1.1rem;
+            line-height: 1.6;
+            margin: 10px 0;
+            text-align: left;
+        }
+
+        .recipe-container img {
+            width: 100%;
+            height: auto;
+            border-radius: 8px;
+            margin-top: 20px;
+        }
+
+        /* Back and Bookmark buttons */
+        .button-container {
+            margin-top: 20px;
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+        }
+
+        .button {
+            font-size: 1.1rem;
+            text-decoration: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            transition: background-color 0.3s ease;
+            cursor: pointer;
+        }
+
+        .back-link {
+            color: #4CAF50;
+            border: 1px solid #4CAF50;
+        }
+
+        .back-link:hover {
+            background-color: #4CAF50;
+            color: #fff;
+        }
+
+        .bookmark-btn {
+            color: white;
+            background-color: #FF9800;
+            border: 1px solid #FF9800;
+        }
+
+        .bookmark-btn:hover {
+            background-color: #E68900;
+        }
+    </style>
+</head>
+<body>
+    <h1>Recipe Details</h1>
+
+    <div class="recipe-container">
+        <h2>{{ recipe['Name'] }}</h2>
+        <p><strong>Description:</strong> {{ recipe['Description'] | default('No description available') }}</p>
+        <p><strong>Ingredients:</strong> {{ recipe['RecipeIngredientParts'] | default('No ingredients available') }}</p>
+        <p><strong>Instructions:</strong> {{ recipe['RecipeInstructions'] | default('No instructions available') }}</p>
+
+        {% if recipe['Images'] %}
+            <img src="{{ recipe['Images'] }}" alt="{{ recipe['Name'] }}" />
+        {% else %}
+            <p>No image available for this recipe.</p>
+        {% endif %}
+
+        <div class="button-container">
+            <a href="/mainpage" class="button back-link">Back to Search</a>
+            <button class="button bookmark-btn" onclick="bookmarkRecipe()">Bookmark Recipe</button>
+        </div>
+    </div>
+
+    <script>
+        function bookmarkRecipe() {
+            const recipe = {
+                id: "{{ recipe['RecipeId'] }}",
+                name: "{{ recipe['Name'] }}",
+                image: "{{ recipe['Images'] }}"
+            };
+
+            let bookmarks = JSON.parse(localStorage.getItem("bookmarkedRecipes")) || [];
+            
+            if (bookmarks.some(r => r.id === recipe.id)) {
+                alert("Recipe is already bookmarked!");
+                return;
+            }
+
+            bookmarks.push(recipe);
+            localStorage.setItem("bookmarkedRecipes", JSON.stringify(bookmarks));
+            alert("Recipe bookmarked successfully!");
+        }
+    </script>
+</body>
+</html>

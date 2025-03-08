@@ -31,6 +31,7 @@ class User(db.Model):
     username = db.Column(db.String(80), unique=True, nullable=False)
     password = db.Column(db.String(120), nullable=False)
 
+
 # Create the database tables
 with app.app_context():
     db.create_all()
@@ -101,32 +102,51 @@ def search():
 
     results = []
     seen_recipe_ids = set()
-    recipes_with_images = []  # Store recipes that have images
-    recipes_missing_images = []  # Store recipes with missing images
 
     for hit in response['hits']['hits']:
         recipe = hit['_source']
         recipe_id = recipe.get('RecipeId')
 
         if recipe_id not in seen_recipe_ids:
+            # Clean up image field if available
             if 'Images' in recipe and recipe['Images'] and recipe['Images'] != 'character(0)':
-                # Clean up image field, show only the first image
                 recipe['Images'] = clean_image_url(recipe['Images'])
-                recipes_with_images.append(recipe)
-            else:
-                recipes_missing_images.append(recipe)
-
-            results.append(recipe)
             seen_recipe_ids.add(recipe_id)
-
-    # If there are recipes with missing images, find similar ones
-    if recipes_missing_images and recipes_with_images:
-        assign_images_using_cosine_similarity(recipes_missing_images, recipes_with_images)
+            results.append(recipe)
 
     return jsonify({
         "corrected_query": corrected_query,
         "results": results
     })
+
+@app.route('/recipe_details', methods=['GET'])
+def recipe_details():
+    # Get the recipe ID from the URL query string
+    recipe_id = request.args.get('recipe_id')
+    if not recipe_id:
+        return jsonify({"message": "Recipe ID is missing"}), 400
+
+    # Search for the recipe in Elasticsearch (or database, if applicable)
+    response = es.search(index="recipes", body={
+        "query": {
+            "term": {
+                "RecipeId": recipe_id  # Ensure this matches the field name in your index
+            }
+        },
+        "size": 1
+    })
+
+    if response['hits']['total']['value'] == 0:
+        return jsonify({"message": "Recipe not found"}), 404
+
+    recipe = response['hits']['hits'][0]['_source']
+
+    # Optionally, clean the image URL if necessary
+    if 'Images' in recipe and recipe['Images']:
+        recipe['Images'] = clean_image_url(recipe['Images'])
+    print(recipe)
+    return render_template('recipes_details.html', recipe=recipe)
+
 
 def clean_image_url(image_url):
     """
@@ -154,53 +174,6 @@ def clean_image_url(image_url):
         return image_url.strip('"').strip()
     
     return None
-
-
-def assign_images_using_cosine_similarity(missing, available):
-    """
-    Find the most similar recipe (from those with images) using cosine similarity 
-    and assign an image to recipes missing images.
-    """
-    vectorizer = TfidfVectorizer()
-    
-    # Prepare text data for vectorization
-    all_recipes = missing + available
-    text_data = [
-        f"{r.get('Name', '')} {r.get('Description', '')} {r.get('RecipeInstructions', '')}"
-        for r in all_recipes
-    ]
-
-    # Convert text data into TF-IDF vectors
-    tfidf_matrix = vectorizer.fit_transform(text_data)
-    
-    # Split the TF-IDF matrix into missing and available recipes
-    missing_vectors = tfidf_matrix[:len(missing)]
-    available_vectors = tfidf_matrix[len(missing):]
-
-    # Compute cosine similarity between missing and available recipes
-    similarity_matrix = cosine_similarity(missing_vectors, available_vectors)
-
-    for i, missing_recipe in enumerate(missing):
-        # Find the most similar recipe that has an image
-        best_match_index = similarity_matrix[i].argmax()
-        best_match_recipe = available[best_match_index]
-        
-        # Debugging: Check if the best match has a valid image
-        print(f"Missing Recipe: {missing_recipe.get('Name', '')}")
-        print(f"Best Match Recipe: {best_match_recipe.get('Name', '')}")
-        print(f"Best Match Image: {best_match_recipe.get('Images', '')}")
-        print(type(best_match_recipe.get('Images', '')))
-        # If the best match recipe has a valid image, preprocess and assign it
-        best_match_image = best_match_recipe.get('Images')
-        processed_image = clean_image_url(best_match_image)
-
-        if processed_image:
-            missing_recipe['Images'] = processed_image
-        else:
-            # If no valid image found, log that no image was assigned
-            print("No valid image found for the best match, skipping.")
-    
-    return missing
 
 def correct_spelling(query):
     # Split the query into words

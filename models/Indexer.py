@@ -1,7 +1,5 @@
 import time
 import pickle
-import os
-import re  # Make sure to import 're' for regex handling
 from elasticsearch.helpers import bulk
 import pandas as pd
 from elasticsearch import Elasticsearch
@@ -10,8 +8,7 @@ from concurrent.futures import ThreadPoolExecutor
 class Indexer:
     def __init__(self):
         self.start_time = time.time()
-        self.csv_file_path = "resource/recipes.csv"
-        self.pickle_file_path = "resource/recipes_index.pkl"
+        self.csv_file_path = "resource/full_recipes.csv"
         self.es_client = Elasticsearch("https://localhost:9200", 
                                        basic_auth=("elastic", "Z_3O+lFyJPcXxPB+UvD-"), 
                                        ca_certs="~/http_ca.crt")
@@ -19,15 +16,6 @@ class Indexer:
         print(f"Initialization took {self.init_time:.4f} seconds")
 
     def run_indexer(self):
-        # Check if the pickle file exists
-        if os.path.exists(self.pickle_file_path):
-            print(f"Pickle file found at {self.pickle_file_path}. Loading indexed documents...")
-            with open(self.pickle_file_path, 'rb') as f:
-                indexed_documents = pickle.load(f)
-            print("Pickle file loaded successfully!")
-            return  # Exit the method without re-indexing if the pickle file is found
-
-        # If pickle file doesn't exist, proceed with indexing
         start_time = time.time()
 
         # Disable refresh for bulk indexing
@@ -93,13 +81,13 @@ class Indexer:
         # Use ThreadPoolExecutor to parallelize the row processing
         with ThreadPoolExecutor() as executor:
             documents = list(executor.map(process_row, [row for idx, row in data.iterrows()]))
-
+        
         # Perform bulk indexing in batches of 5000 or a suitable number
         for i in range(0, len(documents), 5000):
             batch = documents[i:i + 5000]
             success, failed = bulk(self.es_client, batch)
             print(f"Bulk indexed {len(batch)} documents: {success} successful, {failed} failed")
-
+        
         # Enable refresh again after bulk indexing
         self.es_client.indices.put_settings(index="recipes", body={
             "settings": {
@@ -110,7 +98,7 @@ class Indexer:
         })
 
         # Pickle the indexed documents to a file
-        with open(self.pickle_file_path, 'wb') as f:
+        with open('resource/recipes_index.pkl', 'wb') as f:
             pickle.dump(documents, f)
         print("Indexed documents pickled successfully!")
 
