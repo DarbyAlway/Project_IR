@@ -1,0 +1,124 @@
+/* General page styles */
+body {
+    font-family: Arial, sans-serif;
+    background-color: #f4f4f9;
+    color: #333;
+    margin: 0;
+    padding: 0;
+}
+
+h1 {
+    text-align: center;
+    color: #4CAF50;
+    padding: 20px;
+}
+
+/* Container for recipe details */
+.recipe-container {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 20px;
+    background-color: #fff;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    border-radius: 10px;
+    margin-top: 30px;
+    text-align: center;
+}
+
+.recipe-container h2 {
+    font-size: 2rem;
+    margin-bottom: 20px;
+    color: #333;
+}
+
+.recipe-container p {
+    font-size: 1.1rem;
+    line-height: 1.6;
+    margin: 10px 0;
+    text-align: left;
+}
+
+.recipe-container img {
+    width: 100%;
+    height: auto;
+    border-radius: 8px;
+    margin-top: 20px;
+}
+
+/* Back and Bookmark buttons */
+.button-container {
+    margin-top: 20px;
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+}
+
+.button {
+    font-size: 1.1rem;
+    text-decoration: none;
+    padding: 10px 20px;
+    border-radius: 5px;
+    transition: background-color 0.3s ease;
+    cursor: pointer;
+}
+
+.back-link {
+    color: #4CAF50;
+    border: 1px solid #4CAF50;
+}
+
+.back-link:hover {
+    background-color: #4CAF50;
+    color: #fff;
+}
+
+.bookmark-btn {
+    color: white;
+    background-color: #FF9800;
+    border: 1px solid #FF9800;
+}
+
+.bookmark-btn:hover {
+    background-color: #E68900;
+}
+ /* Popup Modal */
+ .popup {
+    display: none;
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: white;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0px 0px 10px gray;
+    width: 300px;
+    text-align: center;
+}
+.popup input, .popup select, .popup button {
+    margin-top: 10px;
+    width: 100%;
+}
+.popup .close-btn {
+    background: red;
+    color: white;
+    border: none;
+    padding: 5px;
+    cursor: pointer;
+    margin-top: 10px;
+}
+.popup .folder-options button {
+    width: 48%;
+    margin: 5px 1%;
+    padding: 10px;
+    border: none;
+    cursor: pointer;
+}
+.popup .folder-options .btn-existing {
+    background-color: #3498db;
+    color: white;
+}
+.popup .folder-options .btn-new {
+    background-color: #2ecc71;
+    color: white;
+}

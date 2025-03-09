@@ -1,135 +1,195 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Recipe Details</title>
-    <style>
-        /* General page styles */
-        body {
-            font-family: Arial, sans-serif;
-            background-color: #f4f4f9;
-            color: #333;
-            margin: 0;
-            padding: 0;
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='recipes_details.css') }}"
+    />
+    <script>
+      function showBookmarkPopup() {
+        // Show the popup
+        document.getElementById("bookmark-popup").style.display = "block";
+
+        // Fetch the user's bookmark folders from the server
+        fetch("/bookmark/folders", {
+          method: "GET",
+          headers: { "Content-Type": "application/json" },
+        })
+          .then((response) => response.json())
+          .then((data) => {
+            // Populate the folder dropdown
+            const folderSelect = document.getElementById("existing-folder");
+            folderSelect.innerHTML = ""; // Clear existing options
+
+            // If there are no folders, show a message (optional)
+            if (data.folders.length === 0) {
+              const option = document.createElement("option");
+              option.value = "";
+              option.text = "No folders available";
+              folderSelect.appendChild(option);
+            } else {
+              // Populate dropdown with folder names
+              data.folders.forEach((folder) => {
+                const option = document.createElement("option");
+                option.value = folder;
+                option.text = folder;
+                folderSelect.appendChild(option);
+              });
+            }
+          })
+          .catch((error) => console.error("Error fetching folders:", error));
+      }
+
+      function closeBookmarkPopup() {
+        document.getElementById("bookmark-popup").style.display = "none";
+      }
+
+      function chooseFolderType(type) {
+        if (type === "existing") {
+          document.getElementById("existing-folder-container").style.display =
+            "block";
+          document.getElementById("new-folder-container").style.display =
+            "none";
+        } else {
+          document.getElementById("existing-folder-container").style.display =
+            "none";
+          document.getElementById("new-folder-container").style.display =
+            "block";
+        }
+      }
+
+      function saveToExistingFolder() {
+        const folderName = document.getElementById("existing-folder").value;
+        const recipeId = "{{ recipe['RecipeId'] }}";
+        const recipeName = "{{ recipe['Name'] }}";
+        const recipeImage = "{{ recipe['Images'] }}";
+        const recipeDescription = "{{ recipe['Description'] }}";
+
+        if (!folderName) {
+          alert("Please select an existing folder.");
+          return;
         }
 
-        h1 {
-            text-align: center;
-            color: #4CAF50;
-            padding: 20px;
+        fetch("/bookmark/existing", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            folder_name: folderName,
+            recipe_id: recipeId,
+            recipe_name: recipeName,
+            recipe_image: recipeImage,
+            recipe_description: recipeDescription,
+          }),
+        })
+          .then((response) => response.json())
+          .then((data) => {
+            alert(data.message);
+            closeBookmarkPopup();
+          })
+          .catch((error) => console.error("Error:", error));
+      }
+
+      function saveToNewFolder() {
+        const folderName = document.getElementById("new-folder").value.trim();
+        const recipeId = "{{ recipe['RecipeId'] }}";
+        const recipeName = "{{ recipe['Name'] }}";
+        const recipeImage = "{{ recipe['Images'] }}";
+        console.log(recipeImage);
+        const recipeDescription = "{{ recipe['Description'] }}";
+
+        if (!folderName) {
+          alert("Please enter a new folder name.");
+          return;
         }
 
-        /* Container for recipe details */
-        .recipe-container {
-            max-width: 800px;
-            margin: 0 auto;
-            padding: 20px;
-            background-color: #fff;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            border-radius: 10px;
-            margin-top: 30px;
-            text-align: center;
-        }
-
-        .recipe-container h2 {
-            font-size: 2rem;
-            margin-bottom: 20px;
-            color: #333;
-        }
-
-        .recipe-container p {
-            font-size: 1.1rem;
-            line-height: 1.6;
-            margin: 10px 0;
-            text-align: left;
-        }
-
-        .recipe-container img {
-            width: 100%;
-            height: auto;
-            border-radius: 8px;
-            margin-top: 20px;
-        }
-
-        /* Back and Bookmark buttons */
-        .button-container {
-            margin-top: 20px;
-            display: flex;
-            justify-content: center;
-            gap: 15px;
-        }
-
-        .button {
-            font-size: 1.1rem;
-            text-decoration: none;
-            padding: 10px 20px;
-            border-radius: 5px;
-            transition: background-color 0.3s ease;
-            cursor: pointer;
-        }
-
-        .back-link {
-            color: #4CAF50;
-            border: 1px solid #4CAF50;
-        }
-
-        .back-link:hover {
-            background-color: #4CAF50;
-            color: #fff;
-        }
-
-        .bookmark-btn {
-            color: white;
-            background-color: #FF9800;
-            border: 1px solid #FF9800;
-        }
-
-        .bookmark-btn:hover {
-            background-color: #E68900;
-        }
-    </style>
-</head>
-<body>
+        fetch("/bookmark/new", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            folder_name: folderName,
+            recipe_id: recipeId,
+            recipe_name: recipeName,
+            recipe_image: recipeImage,
+            recipe_description: recipeDescription,
+          }),
+        })
+          .then((response) => response.json())
+          .then((data) => {
+            alert(data.message);
+            closeBookmarkPopup();
+          })
+          .catch((error) => console.error("Error:", error));
+      }
+    </script>
+  </head>
+  <body>
     <h1>Recipe Details</h1>
 
     <div class="recipe-container">
-        <h2>{{ recipe['Name'] }}</h2>
-        <p><strong>Description:</strong> {{ recipe['Description'] | default('No description available') }}</p>
-        <p><strong>Ingredients:</strong> {{ recipe['RecipeIngredientParts'] | default('No ingredients available') }}</p>
-        <p><strong>Instructions:</strong> {{ recipe['RecipeInstructions'] | default('No instructions available') }}</p>
+      <h2>{{ recipe['Name'] }}</h2>
+      <p>
+        <strong>Description:</strong> {{ recipe['Description'] | default('No
+        description available') }}
+      </p>
+      <p>
+        <strong>Ingredients:</strong> {{ recipe['RecipeIngredientParts'] |
+        default('No ingredients available') }}
+      </p>
+      <p>
+        <strong>Instructions:</strong> {{ recipe['RecipeInstructions'] |
+        default('No instructions available') }}
+      </p>
 
-        {% if recipe['Images'] %}
-            <img src="{{ recipe['Images'] }}" alt="{{ recipe['Name'] }}" />
-        {% else %}
-            <p>No image available for this recipe.</p>
-        {% endif %}
+      {% if recipe['Images'] %}
+      <img src="{{ recipe['Images'] }}" alt="{{ recipe['Name'] }}" />
+      {% else %}
+      <p>No image available for this recipe.</p>
+      {% endif %}
 
-        <div class="button-container">
-            <a href="/mainpage" class="button back-link">Back to Search</a>
-            <button class="button bookmark-btn" onclick="bookmarkRecipe()">Bookmark Recipe</button>
-        </div>
+      <div class="button-container">
+        <a href="/mainpage" class="button back-link">Back to Search</a>
+        <button class="button bookmark-btn" onclick="showBookmarkPopup()">
+          Bookmark
+        </button>
+      </div>
     </div>
 
-    <script>
-        function bookmarkRecipe() {
-            const recipe = {
-                id: "{{ recipe['RecipeId'] }}",
-                name: "{{ recipe['Name'] }}",
-                image: "{{ recipe['Images'] }}"
-            };
+    <!-- Bookmark Popup -->
+    <div id="bookmark-popup" class="popup">
+      <h3>Save to Bookmark</h3>
 
-            let bookmarks = JSON.parse(localStorage.getItem("bookmarkedRecipes")) || [];
-            
-            if (bookmarks.some(r => r.id === recipe.id)) {
-                alert("Recipe is already bookmarked!");
-                return;
-            }
+      <div class="folder-options">
+        <button class="btn-existing" onclick="chooseFolderType('existing')">
+          Existing Folder
+        </button>
+        <button class="btn-new" onclick="chooseFolderType('new')">
+          New Folder
+        </button>
+      </div>
 
-            bookmarks.push(recipe);
-            localStorage.setItem("bookmarkedRecipes", JSON.stringify(bookmarks));
-            alert("Recipe bookmarked successfully!");
-        }
-    </script>
-</body>
+      <div id="existing-folder-container" style="display: none">
+        <h4>Select Folder</h4>
+        <select id="existing-folder">
+          {% for folder in user_folders %}
+          <option value="{{ folder }}">{{ folder }}</option>
+          {% endfor %}
+        </select>
+        <button onclick="saveToExistingFolder()">
+          Save to Existing Folder
+        </button>
+      </div>
+
+      <div id="new-folder-container" style="display: none">
+        <h4>Enter New Folder Name</h4>
+        <input type="text" id="new-folder" placeholder="New folder name" />
+        <button onclick="saveToNewFolder()">Save to New Folder</button>
+      </div>
+
+      <br />
+      <button class="close-btn" onclick="closeBookmarkPopup()">Close</button>
+    </div>
+  </body>
 </html>

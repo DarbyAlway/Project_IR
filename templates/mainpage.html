@@ -9,6 +9,7 @@
         font-family: Arial, sans-serif;
         margin: 20px;
         background-color: #f4f4f4;
+        position: relative;
       }
       input[type="text"] {
         padding: 10px;
@@ -48,9 +49,28 @@
       a:hover {
         color: #007bff;
       }
+
+      /* Style for the logout button */
+      #logout-button {
+        position: absolute;
+        top: 20px;
+        right: 20px;
+        padding: 10px 20px;
+        background-color: #ff5733;
+        color: white;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+      }
+
+      #logout-button:hover {
+        background-color: #ff2a00;
+      }
     </style>
   </head>
   <body>
+    <button id="logout-button">Logout</button>
+
     <h1>Recipe Search</h1>
     <form id="search-form">
       <input
@@ -92,7 +112,7 @@
               } else {
                 correctedQueryElement.innerHTML = "";
               }
-              console.log(data.results)
+              console.log(data.results);
               data.results.forEach((recipe) => {
                 var resultDiv = document.createElement("div");
                 resultDiv.classList.add("result-item");
@@ -102,7 +122,7 @@
 
                 // Ensure the recipe ID is correctly passed here
                 resultLink.href = `recipe_details?recipe_id=${recipe.RecipeId}`; // Ensure 'recipe.id' is correctly populated
-                console.log(`recipe_details?recipe_id=${recipe.RecipeId}`)
+                console.log(`recipe_details?recipe_id=${recipe.RecipeId}`);
                 resultLink.innerHTML = `
         <div class="result-details">
             <h3>${recipe.Name}</h3>
@@ -130,6 +150,13 @@
           var query = document.getElementById("search-input").value;
           searchRecipes(query);
         });
+
+      // Logout button functionality (example)
+      document.getElementById("logout-button").addEventListener("click", function () {
+        // Logout logic here, such as redirecting to a logout page
+        alert("Logged out successfully");
+        window.location.href = "/logout"; // Adjust the URL as needed
+      });
     </script>
   </body>
 </html>
