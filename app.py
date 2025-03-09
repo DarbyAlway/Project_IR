@@ -49,6 +49,8 @@ class Bookmark(db.Model):
     recipe_name = db.Column(db.String(100), nullable=False)
     recipe_images = db.Column(db.String(500), nullable=False)
     recipe_description = db.Column(db.String(500), nullable=False)
+    rating = db.Column(db.Integer, nullable=False)
+
     user = db.relationship('User', backref='bookmarks', lazy=True)
 
 class BookmarkFolder(db.Model):
@@ -209,6 +211,7 @@ def save_to_existing():
     recipe_name = data['recipe_name']
     Images = data['recipe_image']
     recipe_description = data['recipe_description']
+    rating = data.get('rating')
     # Find the user
     user = User.query.get(user_id)
     if not user:
@@ -220,7 +223,7 @@ def save_to_existing():
         return jsonify({"message": f"Folder '{folder_name}' not found!"}), 404
 
     # Add recipe to existing folder
-    bookmark = Bookmark(user_id=user_id, folder_id=folder.id, recipe_id=recipe_id, recipe_name=recipe_name, recipe_images=Images, recipe_description=recipe_description)
+    bookmark = Bookmark(user_id=user_id, folder_id=folder.id, recipe_id=recipe_id, recipe_name=recipe_name, recipe_images=Images, recipe_description=recipe_description, rating=rating)
     db.session.add(bookmark)
     db.session.commit()
 
@@ -243,6 +246,7 @@ def save_to_new():
     recipe_name = data['recipe_name']
     Images = data['recipe_image']
     recipe_description = data['recipe_description']
+    rating = data.get('rating')
     # Find the user
     user = User.query.get(user_id)
     if not user:
@@ -259,7 +263,7 @@ def save_to_new():
     db.session.commit()
 
     # Add the recipe to the new folder
-    bookmark = Bookmark(user_id=user_id, folder_id=new_folder.id, recipe_id=recipe_id, recipe_name=recipe_name, recipe_images=Images, recipe_description=recipe_description)
+    bookmark = Bookmark(user_id=user_id, folder_id=new_folder.id, recipe_id=recipe_id, recipe_name=recipe_name, recipe_images=Images, recipe_description=recipe_description,rating=rating)
     db.session.add(bookmark)
     db.session.commit()
 

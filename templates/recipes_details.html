@@ -8,7 +8,30 @@
       rel="stylesheet"
       href="{{ url_for('static', filename='recipes_details.css') }}"
     />
+    <style>
+     
+    </style>
     <script>
+      let currentRating = 0;
+
+      function setRating(rating) {
+        currentRating = rating;
+
+        // Update the visual appearance of stars
+        const stars = document.querySelectorAll('.star');
+        stars.forEach((star, index) => {
+          if (index < rating) {
+            star.classList.add('selected');
+          } else {
+            star.classList.remove('selected');
+          }
+        });
+
+        // Show feedback based on rating
+        const feedback = document.getElementById("rating-feedback");
+        feedback.innerText = `You rated this recipe: ${rating} star${rating > 1 ? 's' : ''}`;
+      }
+
       function showBookmarkPopup() {
         // Show the popup
         document.getElementById("bookmark-popup").style.display = "block";
@@ -82,6 +105,8 @@
             recipe_name: recipeName,
             recipe_image: recipeImage,
             recipe_description: recipeDescription,
+            rating: currentRating,
+
           }),
         })
           .then((response) => response.json())
@@ -97,7 +122,6 @@
         const recipeId = "{{ recipe['RecipeId'] }}";
         const recipeName = "{{ recipe['Name'] }}";
         const recipeImage = "{{ recipe['Images'] }}";
-        console.log(recipeImage);
         const recipeDescription = "{{ recipe['Description'] }}";
 
         if (!folderName) {
@@ -114,6 +138,7 @@
             recipe_name: recipeName,
             recipe_image: recipeImage,
             recipe_description: recipeDescription,
+            rating: currentRating,
           }),
         })
           .then((response) => response.json())
@@ -169,6 +194,19 @@
           New Folder
         </button>
       </div>
+      <!-- Rating Section -->
+      <div id="rating-container">
+        <h4>Rate this Recipe</h4>
+        <div class="rating-stars">
+          <span class="star" onclick="setRating(1)">&#9733;</span>
+          <span class="star" onclick="setRating(2)">&#9733;</span>
+          <span class="star" onclick="setRating(3)">&#9733;</span>
+          <span class="star" onclick="setRating(4)">&#9733;</span>
+          <span class="star" onclick="setRating(5)">&#9733;</span>
+        </div>
+        <p id="rating-feedback">No rating yet.</p>
+      </div>
+
 
       <div id="existing-folder-container" style="display: none">
         <h4>Select Folder</h4>
@@ -177,9 +215,7 @@
           <option value="{{ folder }}">{{ folder }}</option>
           {% endfor %}
         </select>
-        <button onclick="saveToExistingFolder()">
-          Save to Existing Folder
-        </button>
+        <button onclick="saveToExistingFolder()">Save to Existing Folder</button>
       </div>
 
       <div id="new-folder-container" style="display: none">
@@ -188,6 +224,7 @@
         <button onclick="saveToNewFolder()">Save to New Folder</button>
       </div>
 
+    
       <br />
       <button class="close-btn" onclick="closeBookmarkPopup()">Close</button>
     </div>

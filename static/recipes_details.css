@@ -122,3 +122,43 @@ h1 {
     background-color: #2ecc71;
     color: white;
 }
+ /* Rating Stars */
+ .rating-stars {
+    display: flex;
+    gap: 5px;
+  }
+
+  .star {
+    font-size: 30px;
+    cursor: pointer;
+    color: gray;
+  }
+
+  .star.selected {
+    color: gold;
+  }
+
+  #rating-feedback {
+    margin-top: 10px;
+    font-size: 16px;
+    color: #333;
+  }
+
+
+  /* Rating Stars */
+  .rating-stars {
+    display: flex;
+    justify-content: center; /* Center stars horizontally */
+    gap: 5px;
+    margin: 10px 0;
+  }
+  
+  .star {
+    font-size: 30px;
+    cursor: pointer;
+    color: gray;
+  }
+  
+  .star.selected {
+    color: gold;
+  }
