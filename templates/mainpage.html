@@ -7,9 +7,39 @@
     <style>
       body {
         font-family: Arial, sans-serif;
-        margin: 20px;
+        margin: 0;
+        padding: 0;
         background-color: #f4f4f4;
-        position: relative;
+        display: flex;
+      }
+      /* Sidebar Style */
+      .sidebar {
+        width: 200px;
+        background-color: #333;
+        color: white;
+        padding-top: 20px;
+        position: fixed;
+        top: 0;
+        left: 0;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+      }
+      .sidebar a {
+        text-decoration: none;
+        color: white;
+        padding: 10px 15px;
+        text-align: center;
+        font-size: 18px;
+        border-bottom: 1px solid #444;
+      }
+      .sidebar a:hover {
+        background-color: #575757;
+      }
+      .content {
+        margin-left: 200px;
+        padding: 20px;
+        flex-grow: 1;
       }
       input[type="text"] {
         padding: 10px;
@@ -69,22 +99,32 @@
     </style>
   </head>
   <body>
-    <button id="logout-button">Logout</button>
+    <!-- Sidebar -->
+    <div class="sidebar">
+      <a href="/mainpage">Suggestion</a>
+      <a href="/mainpage">Search</a>
+      <a href="/show_bookmark">Bookmark Folders</a>
+    </div>
 
-    <h1>Recipe Search</h1>
-    <form id="search-form">
-      <input
-        type="text"
-        id="search-input"
-        placeholder="Search for recipes..."
-        spellcheck="true"
-      />
-      <button type="submit" id="search-button">Search</button>
-    </form>
+    <!-- Content Area -->
+    <div class="content">
+      <button id="logout-button">Logout</button>
 
-    <p id="corrected-query"></p>
+      <h1>Recipe Search</h1>
+      <form id="search-form">
+        <input
+          type="text"
+          id="search-input"
+          placeholder="Search for recipes..."
+          spellcheck="true"
+        />
+        <button type="submit" id="search-button">Search</button>
+      </form>
 
-    <div class="results" id="results"></div>
+      <p id="corrected-query"></p>
+
+      <div class="results" id="results"></div>
+    </div>
 
     <script>
       function searchRecipes(query) {
@@ -123,15 +163,15 @@
                 // Ensure the recipe ID is correctly passed here
                 resultLink.href = `recipe_details?recipe_id=${recipe.RecipeId}`; // Ensure 'recipe.id' is correctly populated
                 console.log(`recipe_details?recipe_id=${recipe.RecipeId}`);
-                resultLink.innerHTML = `
-        <div class="result-details">
-            <h3>${recipe.Name}</h3>
-            <p>${recipe.Description}</p>
-            <p><strong>Author:</strong> ${recipe.AuthorName}</p>
-            <p><strong>Cook Time:</strong> ${recipe.CookTime}</p>
-        </div>
-        <img src="${recipe.Images}" alt="${recipe.Name}">
-    `;  
+                resultLink.innerHTML = ` 
+                  <div class="result-details">
+                      <h3>${recipe.Name}</h3>
+                      <p>${recipe.Description}</p>
+                      <p><strong>Author:</strong> ${recipe.AuthorName}</p>
+                      <p><strong>Cook Time:</strong> ${recipe.CookTime}</p>
+                  </div>
+                  <img src="${recipe.Images}" alt="${recipe.Name}">
+              `;
 
                 resultDiv.appendChild(resultLink);
                 resultsContainer.appendChild(resultDiv);

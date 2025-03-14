@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bookmarks</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='bookmark.css') }}">
+</head>
+<body>
+          <!-- Sidebar -->
+          <div class="sidebar">
+            <a href="/mainpage">Suggestion</a>
+            <a href="/mainpage">Search</a>
+            <a href="/show_bookmark">Bookmark Folders</a>
+          </div>
+      
+    <div class="container">
+        <h1>Bookmark Folders</h1>
+        {% for folder in folders %}
+            <div class="folder">
+                <h3><a href="/bookmark_detail?folder_id={{ folder.id }}">{{ folder.name }}</a></h3>
+            </div>
+        {% endfor %}
+    </div>
+</body>
+</html>

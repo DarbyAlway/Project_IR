@@ -269,7 +269,33 @@ def save_to_new():
 
     return jsonify({"message": f"New folder '{folder_name}' created and recipe '{recipe_id}' saved!"})
 
-@app.route('/logout')
+@app.route('/show_bookmark', methods=['GET'])
+def get_bookmarks():
+    user_id = session.get('user_id')
+    if not user_id:
+        return redirect(url_for('login'))
+    
+    folders = BookmarkFolder.query.filter_by(user_id=user_id).all()
+    return render_template('bookmark.html', folders=folders)
+
+@app.route('/bookmark_detail', methods=['GET'])
+def bookmark_detail():
+    user_id = session.get('user_id')
+    if not user_id:
+        return redirect(url_for('login'))
+
+    folder_id = request.args.get('folder_id')
+    if not folder_id:
+        return "Folder not found", 404
+
+    folder = BookmarkFolder.query.filter_by(id=folder_id, user_id=user_id).first()
+    if not folder:
+        return "Folder not found", 404
+
+    bookmarks = Bookmark.query.filter_by(folder_id=folder.id).all()
+    return render_template('bookmark_details.html', folder=folder, bookmarks=bookmarks)
+
+@app.route('/logout', methods=['GET'])
 def logout():
     session.pop('user_id', None)  # Remove the user_id from the session
     return redirect(url_for('login'))
