@@ -320,17 +320,21 @@ def show_all_bookmarks_page():
     # Fetch bookmarks that are associated with a valid folder (i.e., exclude 'Uncategorized' folders)
     bookmarks = Bookmark.query.filter_by(user_id=user_id).filter(Bookmark.folder_id != None).all()
 
+    # Prepare formatted data with ratings
     formatted_bookmarks = [
         {
             "recipe_id": bookmark.recipe_id,
             "recipe_name": bookmark.recipe_name,
             "recipe_image": bookmark.recipe_images,
             "recipe_description": bookmark.recipe_description,
-            "rating": bookmark.rating,
+            "rating": bookmark.rating,  # Directly use the rating from the Bookmark model
             "folder_name": bookmark.folder.name if bookmark.folder else "Uncategorized"
         }
         for bookmark in bookmarks
     ]
+
+    # Sort the bookmarks by rating in descending order
+    formatted_bookmarks.sort(key=lambda x: x['rating'], reverse=True)
 
     return render_template('all_bookmarks.html', bookmarks=formatted_bookmarks)
 
