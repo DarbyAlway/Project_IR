@@ -44,7 +44,7 @@ class User(db.Model):
 class Bookmark(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
-    folder_id = db.Column(db.Integer, db.ForeignKey('bookmark_folder.id'), nullable=False)
+    folder_id = db.Column(db.Integer, db.ForeignKey('bookmark_folder.id'), nullable=True)  # Set nullable=True
     recipe_id = db.Column(db.Integer, nullable=False)
     recipe_name = db.Column(db.String(100), nullable=False)
     recipe_images = db.Column(db.String(500), nullable=False)
@@ -52,6 +52,7 @@ class Bookmark(db.Model):
     rating = db.Column(db.Integer, nullable=False)
 
     user = db.relationship('User', backref='bookmarks', lazy=True)
+
 
 class BookmarkFolder(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -276,7 +277,22 @@ def get_bookmarks():
         return redirect(url_for('login'))
     
     folders = BookmarkFolder.query.filter_by(user_id=user_id).all()
-    return render_template('bookmark.html', folders=folders)
+    
+    # Get bookmarks for each folder and format them
+    formatted_bookmarks = [
+        {
+            "recipe_id": bookmark.recipe_id,
+            "recipe_name": bookmark.recipe_name,
+            "recipe_image": bookmark.recipe_images,
+            "recipe_description": bookmark.recipe_description,
+            "rating": bookmark.rating,
+            "folder_name": bookmark.folder.name if bookmark.folder else "Uncategorized"
+        }
+        for folder in folders
+        for bookmark in folder.bookmarks
+    ]
+    print(formatted_bookmarks)
+    return render_template('bookmark.html', folders=folders, bookmarks=formatted_bookmarks)
 
 @app.route('/bookmark_detail', methods=['GET'])
 def bookmark_detail():
@@ -294,6 +310,68 @@ def bookmark_detail():
 
     bookmarks = Bookmark.query.filter_by(folder_id=folder.id).all()
     return render_template('bookmark_details.html', folder=folder, bookmarks=bookmarks)
+@app.route('/all-bookmarks')
+@login_required
+def show_all_bookmarks_page():
+    user_id = session.get('user_id')
+    if not user_id:
+        return redirect(url_for('login'))
+
+    # Fetch bookmarks that are associated with a valid folder (i.e., exclude 'Uncategorized' folders)
+    bookmarks = Bookmark.query.filter_by(user_id=user_id).filter(Bookmark.folder_id != None).all()
+
+    formatted_bookmarks = [
+        {
+            "recipe_id": bookmark.recipe_id,
+            "recipe_name": bookmark.recipe_name,
+            "recipe_image": bookmark.recipe_images,
+            "recipe_description": bookmark.recipe_description,
+            "rating": bookmark.rating,
+            "folder_name": bookmark.folder.name if bookmark.folder else "Uncategorized"
+        }
+        for bookmark in bookmarks
+    ]
+
+    return render_template('all_bookmarks.html', bookmarks=formatted_bookmarks)
+
+
+@app.route('/delete_folder', methods=['POST'])
+@login_required
+def delete_folder():
+    # Get the folder ID from the query parameters
+    folder_id = request.args.get('folder_id', type=int)
+
+    # Fetch the folder from the database
+    folder = BookmarkFolder.query.get_or_404(folder_id)
+
+    # Check if the folder belongs to the logged-in user
+    if folder.user_id != session.get('user_id'):
+        # If the folder doesn't belong to the current user, show an error
+        return "You are not authorized to delete this folder.", 403
+
+    # Update bookmarks that are associated with this folder (set folder_id to NULL or delete)
+    bookmarks = Bookmark.query.filter_by(folder_id=folder_id).all()
+
+    for bookmark in bookmarks:
+        # Set the folder_id of the bookmark to None, or you could delete the bookmarks if needed
+        bookmark.folder_id = None  # This removes the folder association
+        db.session.add(bookmark)
+
+    # Commit changes to the database (update bookmarks first)
+    db.session.commit()
+
+    # Now delete the folder itself
+    db.session.delete(folder)
+
+    # Commit again after deleting the folder
+    db.session.commit()
+
+    # Redirect back to the folder list page after deletion
+    return redirect(url_for('show_all_bookmarks_page'))  # Or wherever you'd like to redirect
+
+
+
+
 
 @app.route('/logout', methods=['GET'])
 def logout():

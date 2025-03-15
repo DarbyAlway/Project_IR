@@ -1,26 +1,107 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Bookmarks</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='bookmark.css') }}">
-</head>
-<body>
-          <!-- Sidebar -->
-          <div class="sidebar">
-            <a href="/mainpage">Suggestion</a>
-            <a href="/mainpage">Search</a>
-            <a href="/show_bookmark">Bookmark Folders</a>
-          </div>
-      
-    <div class="container">
-        <h1>Bookmark Folders</h1>
-        {% for folder in folders %}
-            <div class="folder">
-                <h3><a href="/bookmark_detail?folder_id={{ folder.id }}">{{ folder.name }}</a></h3>
-            </div>
-        {% endfor %}
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='bookmark.css') }}"
+    />
+  </head>
+  <body>
+    <!-- Sidebar -->
+    <div class="sidebar">
+      <a href="/mainpage">Suggestion</a>
+      <a href="/mainpage">Search</a>
+      <a href="/show_bookmark">Bookmark Folders</a>
+      <a href="/all-bookmarks">Show all bookmarks</a>
     </div>
-</body>
+
+    <div class="container">
+      <h1>Bookmark Folders</h1>
+      {% for folder in folders %}
+      <div class="folder">
+        <h3>
+          <a href="/bookmark_detail?folder_id={{ folder.id }}"
+            >{{ folder.name }}</a
+          >
+        </h3>
+        <!-- Delete Folder Button -->
+        <button class="delete-btn" onclick="openDeleteModal({{ folder.id }})">
+          Delete
+        </button>
+      </div>
+      {% endfor %}
+    </div>
+
+    <!-- Edit Modal for Folder Name -->
+    <div id="editModal" class="modal">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3>Edit Folder Name</h3>
+        </div>
+        <div class="modal-body">
+          <input
+            type="text"
+            id="editFolderName"
+            name="folderName"
+            class="modal-input"
+            placeholder="Enter new folder name"
+          />
+        </div>
+        <div class="modal-footer">
+          <form id="editForm" method="POST">
+            <button
+              type="button"
+              class="modal-btn cancel"
+              onclick="closeModal('editModal')"
+            >
+              Cancel
+            </button>
+            <button type="submit" class="modal-btn edit">Save</button>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <!-- Delete Modal for Confirmation -->
+    <div id="deleteModal" class="modal">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3>Are you sure you want to delete this folder?</h3>
+        </div>
+        <div class="modal-footer">
+          <form id="deleteForm" method="POST">
+            <button
+              type="button"
+              class="modal-btn cancel"
+              onclick="closeModal('deleteModal')"
+            >
+              Cancel
+            </button>
+            <button type="submit" class="modal-btn confirm">Confirm</button>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      let folderIdToDelete = null;
+      let folderIdToEdit = null;
+
+      // Open the modal for Delete action with folder ID
+      function openDeleteModal(folderId) {
+        folderIdToDelete = folderId;
+        document.getElementById("deleteForm").action =
+          "/delete_folder?folder_id=" + folderId;
+        document.getElementById("deleteModal").style.display = "flex";
+      }
+
+      // Close modal by ID
+      function closeModal(modalId) {
+        document.getElementById(modalId).style.display = "none";
+      }
+    </script>
+  </body>
 </html>

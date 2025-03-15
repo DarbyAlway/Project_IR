@@ -11,144 +11,154 @@
     <style>
      
     </style>
-    <script>
-      let currentRating = 0;
-
-      function setRating(rating) {
-        currentRating = rating;
-
-        // Update the visual appearance of stars
-        const stars = document.querySelectorAll('.star');
-        stars.forEach((star, index) => {
-          if (index < rating) {
-            star.classList.add('selected');
-          } else {
-            star.classList.remove('selected');
-          }
-        });
-
-        // Show feedback based on rating
-        const feedback = document.getElementById("rating-feedback");
-        feedback.innerText = `You rated this recipe: ${rating} star${rating > 1 ? 's' : ''}`;
-      }
-
-      function showBookmarkPopup() {
-        // Show the popup
-        document.getElementById("bookmark-popup").style.display = "block";
-
-        // Fetch the user's bookmark folders from the server
-        fetch("/bookmark/folders", {
-          method: "GET",
-          headers: { "Content-Type": "application/json" },
-        })
-          .then((response) => response.json())
-          .then((data) => {
-            // Populate the folder dropdown
-            const folderSelect = document.getElementById("existing-folder");
-            folderSelect.innerHTML = ""; // Clear existing options
-
-            // If there are no folders, show a message (optional)
-            if (data.folders.length === 0) {
-              const option = document.createElement("option");
-              option.value = "";
-              option.text = "No folders available";
-              folderSelect.appendChild(option);
-            } else {
-              // Populate dropdown with folder names
-              data.folders.forEach((folder) => {
-                const option = document.createElement("option");
-                option.value = folder;
-                option.text = folder;
-                folderSelect.appendChild(option);
-              });
-            }
-          })
-          .catch((error) => console.error("Error fetching folders:", error));
-      }
-
-      function closeBookmarkPopup() {
-        document.getElementById("bookmark-popup").style.display = "none";
-      }
-
-      function chooseFolderType(type) {
-        if (type === "existing") {
-          document.getElementById("existing-folder-container").style.display =
-            "block";
-          document.getElementById("new-folder-container").style.display =
-            "none";
+  <script>
+    let currentRating = 1; // Initialize rating to 1 by default
+  
+    // Function to set the rating
+    function setRating(rating) {
+      currentRating = rating;
+  
+      // Update the visual appearance of stars
+      const stars = document.querySelectorAll('.star');
+      stars.forEach((star, index) => {
+        if (index < rating) {
+          star.classList.add('selected');
         } else {
-          document.getElementById("existing-folder-container").style.display =
-            "none";
-          document.getElementById("new-folder-container").style.display =
-            "block";
+          star.classList.remove('selected');
         }
-      }
-
-      function saveToExistingFolder() {
-        const folderName = document.getElementById("existing-folder").value;
-        const recipeId = "{{ recipe['RecipeId'] }}";
-        const recipeName = "{{ recipe['Name'] }}";
-        const recipeImage = "{{ recipe['Images'] }}";
-        const recipeDescription = "{{ recipe['Description'] }}";
-
-        if (!folderName) {
-          alert("Please select an existing folder.");
-          return;
-        }
-
-        fetch("/bookmark/existing", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            folder_name: folderName,
-            recipe_id: recipeId,
-            recipe_name: recipeName,
-            recipe_image: recipeImage,
-            recipe_description: recipeDescription,
-            rating: currentRating,
-
-          }),
+      });
+  
+      // Show feedback based on rating
+      const feedback = document.getElementById("rating-feedback");
+      feedback.innerText = `You rated this recipe: ${rating} star${rating > 1 ? 's' : ''}`;
+    }
+  
+    // Function to initialize the stars based on the current rating
+    function initializeRating() {
+      // Trigger the rating function with the currentRating value
+      setRating(currentRating);
+    }
+  
+    // Ensure that the stars reflect the initial rating on page load
+    window.onload = initializeRating;
+  
+    function showBookmarkPopup() {
+      // Show the popup
+      document.getElementById("bookmark-popup").style.display = "block";
+  
+      // Fetch the user's bookmark folders from the server
+      fetch("/bookmark/folders", {
+        method: "GET",
+        headers: { "Content-Type": "application/json" },
+      })
+        .then((response) => response.json())
+        .then((data) => {
+          // Populate the folder dropdown
+          const folderSelect = document.getElementById("existing-folder");
+          folderSelect.innerHTML = ""; // Clear existing options
+  
+          // If there are no folders, show a message (optional)
+          if (data.folders.length === 0) {
+            const option = document.createElement("option");
+            option.value = "";
+            option.text = "No folders available";
+            folderSelect.appendChild(option);
+          } else {
+            // Populate dropdown with folder names
+            data.folders.forEach((folder) => {
+              const option = document.createElement("option");
+              option.value = folder;
+              option.text = folder;
+              folderSelect.appendChild(option);
+            });
+          }
         })
-          .then((response) => response.json())
-          .then((data) => {
-            alert(data.message);
-            closeBookmarkPopup();
-          })
-          .catch((error) => console.error("Error:", error));
+        .catch((error) => console.error("Error fetching folders:", error));
+    }
+  
+    function closeBookmarkPopup() {
+      document.getElementById("bookmark-popup").style.display = "none";
+    }
+  
+    function chooseFolderType(type) {
+      if (type === "existing") {
+        document.getElementById("existing-folder-container").style.display =
+          "block";
+        document.getElementById("new-folder-container").style.display =
+          "none";
+      } else {
+        document.getElementById("existing-folder-container").style.display =
+          "none";
+        document.getElementById("new-folder-container").style.display =
+          "block";
       }
-
-      function saveToNewFolder() {
-        const folderName = document.getElementById("new-folder").value.trim();
-        const recipeId = "{{ recipe['RecipeId'] }}";
-        const recipeName = "{{ recipe['Name'] }}";
-        const recipeImage = "{{ recipe['Images'] }}";
-        const recipeDescription = "{{ recipe['Description'] }}";
-
-        if (!folderName) {
-          alert("Please enter a new folder name.");
-          return;
-        }
-
-        fetch("/bookmark/new", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            folder_name: folderName,
-            recipe_id: recipeId,
-            recipe_name: recipeName,
-            recipe_image: recipeImage,
-            recipe_description: recipeDescription,
-            rating: currentRating,
-          }),
+    }
+  
+    function saveToExistingFolder() {
+      const folderName = document.getElementById("existing-folder").value;
+      const recipeId = "{{ recipe['RecipeId'] }}";
+      const recipeName = "{{ recipe['Name'] }}";
+      const recipeImage = "{{ recipe['Images'] }}";
+      const recipeDescription = "{{ recipe['Description'] }}";
+  
+      if (!folderName) {
+        alert("Please select an existing folder.");
+        return;
+      }
+  
+      fetch("/bookmark/existing", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          folder_name: folderName,
+          recipe_id: recipeId,
+          recipe_name: recipeName,
+          recipe_image: recipeImage,
+          recipe_description: recipeDescription,
+          rating: currentRating,
+        }),
+      })
+        .then((response) => response.json())
+        .then((data) => {
+          alert(data.message);
+          closeBookmarkPopup();
         })
-          .then((response) => response.json())
-          .then((data) => {
-            alert(data.message);
-            closeBookmarkPopup();
-          })
-          .catch((error) => console.error("Error:", error));
+        .catch((error) => console.error("Error:", error));
+    }
+  
+    function saveToNewFolder() {
+      const folderName = document.getElementById("new-folder").value.trim();
+      const recipeId = "{{ recipe['RecipeId'] }}";
+      const recipeName = "{{ recipe['Name'] }}";
+      const recipeImage = "{{ recipe['Images'] }}";
+      const recipeDescription = "{{ recipe['Description'] }}";
+  
+      if (!folderName) {
+        alert("Please enter a new folder name.");
+        return;
       }
-    </script>
+  
+      fetch("/bookmark/new", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          folder_name: folderName,
+          recipe_id: recipeId,
+          recipe_name: recipeName,
+          recipe_image: recipeImage,
+          recipe_description: recipeDescription,
+          rating: currentRating,
+        }),
+      })
+        .then((response) => response.json())
+        .then((data) => {
+          alert(data.message);
+          closeBookmarkPopup();
+        })
+        .catch((error) => console.error("Error:", error));
+    }
+  </script>
+  
   </head>
   <body>
     <h1>Recipe Details</h1>
