@@ -11,6 +11,11 @@ import re
 from functools import wraps
 import pandas as pd
 import random
+from sklearn.preprocessing import LabelEncoder
+from sklearn.impute import SimpleImputer
+import pickle
+import joblib
+
 # Initialize the Flask application and configure the database
 app = Flask(__name__)
 spell = SpellChecker()
@@ -293,6 +298,10 @@ def get_bookmarks():
     ]
     return render_template('bookmark.html', folders=folders, bookmarks=formatted_bookmarks)
 
+df = pd.read_csv('full_recipes.csv')
+encoder = joblib.load('encoder.pkl')  # Load the pre-trained encoder for RecipeCategory
+df['RecipeCategory'] = encoder.fit_transform(df['RecipeCategory'])  # Use the encoder to transform the RecipeCategory
+
 @app.route('/bookmark_detail', methods=['GET'])
 def bookmark_detail():
     user_id = session.get('user_id')
@@ -324,14 +333,76 @@ def bookmark_detail():
             }
         }
         es_response = es.search(index="recipes", body=es_query)
-        
+
         # Parse Elasticsearch results and store in es_results
         for hit in es_response['hits']['hits']:
             es_results.append(hit['_source'])
-    df = pd.DataFrame(es_results)
-    print("es_results:", df.columns)
-    df.to_csv('es_results.csv', index=False) 
-    return render_template('bookmark_details.html', folder=folder, bookmarks=bookmarks)
+
+    # Assuming `data` is a DataFrame containing all recipes with features from Elasticsearch or other sources
+    # Define features to be used for prediction
+    features = ['RecipeId', 'AggregatedRating', 'ReviewCount', 'Calories', 'FatContent', 
+                'SaturatedFatContent', 'CholesterolContent', 'SodiumContent', 'CarbohydrateContent', 
+                'FiberContent', 'SugarContent', 'ProteinContent', 'RecipeServings', 'RecipeCategory']
+
+    # Assuming the trained LightGBM model, scaler, and encoder are loaded here
+    model = joblib.load('lgbm_regressor.pkl')  # Load your pre-trained model
+    scaler = joblib.load('scaler.pkl')  # Load the pre-trained scaler used in feature scaling
+
+    # New user data (e.g., a bookmarked recipe)
+    user_bookmarked_data = pd.DataFrame({
+        'UserId': [user_id] * len(bookmarks),  # Repeat the user_id for each bookmark
+        'RecipeId': [bookmark.recipe_id for bookmark in bookmarks]
+    })
+
+    # List of RecipeIds that the user has already bookmarked
+    bookmarked_recipes = user_bookmarked_data[user_bookmarked_data['UserId'] == user_id]['RecipeId'].tolist()
+
+    # Step 1: Encode the RecipeCategory using the encoder
+
+    # Step 2: Scale the old data (to make predictions for the top 10 recommendations)
+    X_scaled_old = scaler.transform(df[features])  # Scale the features of old data
+    # Predict ratings for all old recipes
+    predicted_ratings_old = model.predict(X_scaled_old)
+
+    # Add predicted ratings to the DataFrame
+    df['PredictedRating'] = predicted_ratings_old
+
+    # Step 3: Exclude the recipes the user has already bookmarked
+    data_to_recommend = df[~df['RecipeId'].isin(bookmarked_recipes)]
+
+    # Step 4: Sort by predicted ratings in descending order to recommend the best ones
+    recommended_recipes = data_to_recommend.sort_values('PredictedRating', ascending=False)
+
+    # Step 5: Get top 10 recommended recipes for the user
+    top_10_recipes = recommended_recipes[['RecipeId', 'PredictedRating']].head(10)
+
+    # Now, search for additional details from Elasticsearch based on RecipeId in top_10_recipes
+    top_10_recipes_details = []
+    for recipe in top_10_recipes['RecipeId']:
+        es_query = {
+            "query": {
+                "term": {
+                    "RecipeId": recipe
+                }
+            }
+        }
+        es_response = es.search(index="recipes", body=es_query)
+
+        if es_response['hits']['hits']:
+            recipe_details = es_response['hits']['hits'][0]['_source']
+            # Add the predicted rating to the recipe details
+            recipe_details['PredictedRating'] = top_10_recipes[top_10_recipes['RecipeId'] == recipe]['PredictedRating'].values[0]
+            # Clean the image URL
+            recipe_details['Images'] = clean_image_url(recipe_details.get('Images'))
+            print('each: ',recipe_details['Images'])
+            top_10_recipes_details.append(recipe_details)
+    print('top 10', top_10_recipes_details)
+
+    # Send the recipe details to the front-end
+    return render_template('bookmark_details.html', folder=folder, bookmarks=bookmarks, top_10_recipes=top_10_recipes_details)
+
+
+
 
 @app.route('/all-bookmarks')
 @login_required
@@ -519,6 +590,54 @@ def correct_spelling(query):
 
 with app.app_context():
     db.create_all()
+    
+def load_pickle(file_name):
+    """Load a pickled object if it exists, otherwise return None."""
+    if os.path.exists(file_name):
+        with open(file_name, "rb") as f:
+            return pickle.load(f)
+    return None
 
+def save_pickle(obj, file_name):
+    """Save an object to a pickle file."""
+    with open(file_name, "wb") as f:
+        pickle.dump(obj, f)
+
+def preprocess_data(df, fit_encoder=False, fit_imputer=False):
+    features = ['RecipeId', 'AggregatedRating', 'ReviewCount', 'Calories', 'FatContent', 'SaturatedFatContent',
+                'CholesterolContent', 'SodiumContent', 'CarbohydrateContent', 'FiberContent', 'SugarContent',
+                'ProteinContent', 'RecipeServings', 'RecipeCategory']
+    
+    df = df[features].copy()  # Ensure a copy to avoid modifying the original DataFrame
+    
+    # Load or create LabelEncoder
+    encoder = load_pickle("encoder.pkl") if not fit_encoder else LabelEncoder()
+    
+    # Encode 'RecipeCategory'
+    if fit_encoder:
+        df['RecipeCategory'] = encoder.fit_transform(df['RecipeCategory'])
+        save_pickle(encoder, "encoder.pkl")  # Save the fitted encoder
+    else:
+        df['RecipeCategory'] = encoder.transform(df['RecipeCategory'])
+    
+    # Select columns for imputation
+    null_col = ['AggregatedRating', 'ReviewCount', 'RecipeServings']
+    
+    # Load or create SimpleImputer
+    imputer = load_pickle("imputer.pkl") if not fit_imputer else SimpleImputer(strategy='mean')
+    
+    # Fit and transform for training, only transform for test data
+    if fit_imputer:
+        imputed_values = imputer.fit_transform(df[null_col])
+        save_pickle(imputer, "imputer.pkl")  # Save the fitted imputer
+    else:
+        imputed_values = imputer.transform(df[null_col])
+    
+    df[null_col] = pd.DataFrame(imputed_values, columns=null_col, index=df.index)
+    
+    # Drop 'RecipeCategory'
+    df = df.drop(columns=['RecipeCategory'])
+    
+    return df
 if __name__ == '__main__':
     app.run(debug=True)

@@ -1,11 +1,13 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ folder.name }} - Bookmarks</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='bookmark_details.css') }}">
 </head>
+
 <body>
     <!-- Sidebar -->
     <div class="sidebar">
@@ -14,31 +16,48 @@
         <a href="/show_bookmark">Bookmark Folders</a>
         <a href="/all-bookmarks">Show all bookmarks</a>
     </div>
-  
+
     <div class="container">
         <h1>Folder name: {{ folder.name }}</h1>
         <div class="bookmarks">
             {% if bookmarks %}
-                {% for bookmark in bookmarks %}
-                    <div class="bookmark">
-                        {% if bookmark.recipe_name %}
-                            <h3><a href="{{ url_for('recipe_details', recipe_id=bookmark.recipe_id) }}">{{ bookmark.recipe_name }}</a></h3>
-                        {% endif %}
-                        {% if bookmark.recipe_images %}
-                            <img src="{{ bookmark.recipe_images }}" alt="{{ bookmark.recipe_name }}">
-                        {% endif %}
-                        {% if bookmark.recipe_description %}
-                            <p>{{ bookmark.recipe_description }}</p>
-                        {% endif %}
-                        {% if bookmark.rating %}
-                            <p>⭐ Rating: {{ bookmark.rating }}</p>
-                        {% endif %}
-                    </div>
-                {% endfor %}
+            {% for bookmark in bookmarks %}
+            <div class="bookmark">
+                {% if bookmark.recipe_name %}
+                <h3><a href="{{ url_for('recipe_details', recipe_id=bookmark.recipe_id) }}">{{ bookmark.recipe_name
+                        }}</a></h3>
+                {% endif %}
+                {% if bookmark.recipe_images %}
+                <img src="{{ bookmark.recipe_images }}" alt="{{ bookmark.recipe_name }}">
+                {% endif %}
+                {% if bookmark.recipe_description %}
+                <p>{{ bookmark.recipe_description }}</p>
+                {% endif %}
+                {% if bookmark.rating %}
+                <p>⭐ Rating: {{ bookmark.rating }}</p>
+                {% endif %}
+            </div>
+            {% endfor %}
             {% else %}
-                <p>No bookmarks found in this folder.</p>
+            <p>No bookmarks found in this folder.</p>
             {% endif %}
+        </div>
+
+        <h2>Top 10 Recommended Recipes:</h2>
+        <div class="recommended-recipes">
+            {% for recipe in top_10_recipes %}
+                <div class="recommended-recipe">
+                    <h3>{{ recipe.Name }}</h3>
+                    <p>{{ recipe.Description }}</p>
+                    <img src="{{ recipe.Images }}" alt="{{ recipe.RecipeName }}">
+                    <script>
+                        console.log("Image URL for {{ recipe.Name }}: {{ recipe.Images }}");
+                    </script>
+                </div>
+            {% endfor %}
+
         </div>
     </div>
 </body>
+
 </html>
