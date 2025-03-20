@@ -9,7 +9,8 @@ from sklearn.metrics.pairwise import cosine_similarity
 from collections import defaultdict
 import re
 from functools import wraps
-
+import pandas as pd
+import random
 # Initialize the Flask application and configure the database
 app = Flask(__name__)
 spell = SpellChecker()
@@ -177,7 +178,6 @@ def recipe_details():
     # Optionally, clean the image URL if necessary
     if 'Images' in recipe and recipe['Images']:
         recipe['Images'] = clean_image_url(recipe['Images'])
-    print(recipe)
     return render_template('recipes_details.html', recipe=recipe)
 
 @app.route('/bookmark/folders', methods=['GET'])
@@ -242,7 +242,7 @@ def save_to_new():
 
     folder_name = data['folder_name']
     recipe_id = data['recipe_id']
-    older_name = data['folder_name']
+    folder_name = data['folder_name']
     recipe_id = data['recipe_id']
     recipe_name = data['recipe_name']
     Images = data['recipe_image']
@@ -291,7 +291,6 @@ def get_bookmarks():
         for folder in folders
         for bookmark in folder.bookmarks
     ]
-    print(formatted_bookmarks)
     return render_template('bookmark.html', folders=folders, bookmarks=formatted_bookmarks)
 
 @app.route('/bookmark_detail', methods=['GET'])
@@ -308,8 +307,32 @@ def bookmark_detail():
     if not folder:
         return "Folder not found", 404
 
+    # Fetch the bookmarks from the folder (using the database query)
     bookmarks = Bookmark.query.filter_by(folder_id=folder.id).all()
+
+    # Prepare list of recipe_ids to search in Elasticsearch
+    recipe_ids = [bookmark.recipe_id for bookmark in bookmarks]
+
+    # Fetch bookmark details from Elasticsearch based on recipe_id
+    es_results = []
+    if recipe_ids:
+        es_query = {
+            "query": {
+                "terms": {
+                    "RecipeId": recipe_ids
+                }
+            }
+        }
+        es_response = es.search(index="recipes", body=es_query)
+        
+        # Parse Elasticsearch results and store in es_results
+        for hit in es_response['hits']['hits']:
+            es_results.append(hit['_source'])
+    df = pd.DataFrame(es_results)
+    print("es_results:", df.columns)
+    df.to_csv('es_results.csv', index=False) 
     return render_template('bookmark_details.html', folder=folder, bookmarks=bookmarks)
+
 @app.route('/all-bookmarks')
 @login_required
 def show_all_bookmarks_page():
@@ -373,6 +396,68 @@ def delete_folder():
     # Redirect back to the folder list page after deletion
     return redirect(url_for('show_all_bookmarks_page'))  # Or wherever you'd like to redirect
 
+@app.route('/suggestion', methods=['GET'])
+@login_required
+def suggestion():
+    # Read the top_predictions CSV file into a pandas DataFrame
+    suggestion = pd.read_csv('resource/top_predictions.csv')
+
+    # Create an empty list to hold the final suggestions
+    final_suggestions = []
+
+    # Loop through each RecipeId in the DataFrame and search in Elasticsearch
+    for recipe_id in suggestion['RecipeId']:
+        # Perform a search query in Elasticsearch to get details for each RecipeId
+        response = es.search(index="recipes", body={
+            "query": {
+                "match": {
+                    "RecipeId": recipe_id
+                }
+            }
+        })
+
+        # If there is a match in Elasticsearch, append the relevant data to final_suggestions
+        if response['hits']['total']['value'] > 0:
+            recipe_data = response['hits']['hits'][0]['_source']
+            
+            # Clean the image URL using clean_image_url
+            cleaned_image_url = clean_image_url(recipe_data.get('Images'))
+            
+            final_suggestions.append({
+                "RecipeId": recipe_data.get('RecipeId'),
+                "Name": recipe_data.get('Name'),
+                "Description": recipe_data.get('Description'),
+                "Images": cleaned_image_url  # Use cleaned image URL
+            })
+
+    # Get 10 random recipe IDs
+    random_recipe_ids = [random.randint(1, 200000) for _ in range(5)]
+
+    # Perform a search for multiple RecipeIds using 'terms' query
+    random_response = es.search(index="recipes", body={
+        "query": {
+            "terms": {
+                "RecipeId": random_recipe_ids
+            }
+        },
+        "size": 5  # We want 10 random recipes
+    })
+
+    # Create a list to hold random recipes
+    random_recipes = []
+    for hit in random_response['hits']['hits']:
+        random_recipe_data = hit['_source']
+        random_recipe_image = clean_image_url(random_recipe_data.get('Images'))
+        
+        random_recipes.append({
+            "RecipeId": random_recipe_data.get('RecipeId'),
+            "Name": random_recipe_data.get('Name'),
+            "Description": random_recipe_data.get('Description'),
+            "Images": random_recipe_image
+        })
+
+    # Return both the regular and random suggestions
+    return render_template('suggestion.html', suggestion=final_suggestions, random_recipes=random_recipes)
 
 
 

@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Recipe Suggestions</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f9;
+            display: flex;
+        }
+        .sidebar {
+            width: 200px;
+            background-color: #333;
+            padding: 20px;
+            color: white;
+            height: 100vh;
+            position: fixed;
+            top: 0;
+            left: 0;
+        }
+        .sidebar a {
+            color: white;
+            text-decoration: none;
+            display: block;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 5px;
+        }
+        .sidebar a:hover {
+            background-color: #575757;
+        }
+        .content {
+            margin-left: 220px;
+            padding: 20px;
+            flex-grow: 1;
+        }
+        .container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+        .recipe-card {
+            background-color: white;
+            border: 1px solid #ddd;
+            border-radius: 10px;
+            width: 280px;
+            padding: 20px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+        .recipe-card img {
+            width: 100%;
+            height: auto;
+            border-radius: 8px;
+        }
+        .recipe-card h3 {
+            font-size: 1.5rem;
+            color: #333;
+        }
+        .recipe-card p {
+            color: #666;
+        }
+        .recipe-card a {
+            text-decoration: none;
+            color: inherit;
+        }
+        .random-recipe {
+            margin-bottom: 30px;
+        }
+    </style>
+</head>
+<body>
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <a href="/suggestion">Suggestion</a>
+        <a href="/mainpage">Search</a>
+        <a href="/show_bookmark">Bookmark Folders</a>
+        <a href="/all-bookmarks">Show all bookmarks</a>
+    </div>
+
+    <!-- Main content area -->
+    <div class="content">
+        <!-- Random Recipe Section -->
+        <div class="random-recipe">
+            <h1>Random Suggestions</h1>
+            {% if random_recipes %}
+                <div class="container">
+                    {% for recipe in random_recipes %}
+                        <div class="recipe-card">
+                            <a href="{{ url_for('recipe_details') }}?recipe_id={{ recipe.RecipeId }}">
+                                <img src="{{ recipe.Images }}" alt="{{ recipe.Name }}">
+                                <h3>{{ recipe.Name }}</h3>
+                                <p>{{ recipe.Description }}</p>
+                            </a>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <p>No random suggestions available.</p>
+            {% endif %}
+        </div>
+  <h1>Recipe Suggestions</h1>
+        <!-- Other Suggestions -->
+        <div class="container">
+          
+            {% for recipe in suggestion %}
+                <div class="recipe-card">
+                    <a href="{{ url_for('recipe_details') }}?recipe_id={{ recipe.RecipeId }}">
+                        <img src="{{ recipe.Images }}" alt="{{ recipe.Name }}">
+                        <h3>{{ recipe.Name }}</h3>
+                        <p>{{ recipe.Description }}</p>
+                    </a>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+</body>
+</html>
