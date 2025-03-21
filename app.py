@@ -14,8 +14,8 @@ import random
 from sklearn.preprocessing import LabelEncoder
 from sklearn.impute import SimpleImputer
 import pickle
+from collections import deque
 import joblib
-
 # Initialize the Flask application and configure the database
 app = Flask(__name__)
 spell = SpellChecker()
@@ -24,7 +24,6 @@ app.config['SECRET_KEY'] = os.urandom(24)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///users.db'  # SQLite database
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False  # Disable modification tracking for efficiency
 db = SQLAlchemy(app)
-
 # Initialize Elasticsearch client
 es = Elasticsearch(
     "https://localhost:9200",
@@ -116,13 +115,22 @@ def mainpage():
     return render_template('mainpage.html')
 
 recipe_data = []
-
 @app.route('/search', methods=['GET'])
 @login_required
 def search():
     query = request.args.get('q', '')
     if not query:
         return jsonify({"message": "No query provided"}), 400
+
+    # Initialize search history in session if not present as a list
+    if 'search_history' not in session:
+        session['search_history'] = []  # Using list instead of deque
+
+    # Add the current query to the beginning of the list
+    session['search_history'].insert(0, query)
+
+    # Limit the search history to the most recent 10 entries
+    session['search_history'] = session['search_history'][:10]
 
     # Perform spell correction
     corrected_query = correct_spelling(query)
@@ -152,10 +160,16 @@ def search():
             seen_recipe_ids.add(recipe_id)
             results.append(recipe)
 
+    # Retrieve search history from session (latest 10 searches)
+    search_history = list(session['search_history'])
+
     return jsonify({
         "corrected_query": corrected_query,
-        "results": results
+        "results": results,
+        "search_history": search_history
     })
+
+
 
 @app.route('/recipe_details', methods=['GET'])
 @login_required

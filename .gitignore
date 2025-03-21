@@ -2,3 +2,4 @@
 *parquet
 *.db
 *pkl
+*pt

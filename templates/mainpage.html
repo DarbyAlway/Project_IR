@@ -96,6 +96,28 @@
       #logout-button:hover {
         background-color: #ff2a00;
       }
+
+      /* Style for search history */
+      .search-history {
+        margin-top: 20px;
+        padding: 10px;
+        background-color: #f9f9f9;
+        border-radius: 5px;
+      }
+
+      .search-history h3 {
+        margin-top: 0;
+      }
+
+      .history-item {
+        padding: 5px;
+        cursor: pointer;
+        color: #007bff;
+      }
+
+      .history-item:hover {
+        text-decoration: underline;
+      }
     </style>
   </head>
   <body>
@@ -124,10 +146,17 @@
 
       <p id="corrected-query"></p>
 
+      <!-- Search History Section -->
+      <div class="search-history" id="search-history">
+        <h3>Recent Searches</h3>
+        <ul id="history-list"></ul>
+      </div>
+
       <div class="results" id="results"></div>
     </div>
 
     <script>
+      // Function to search recipes
       function searchRecipes(query) {
         if (query) {
           fetch("/search?q=" + encodeURIComponent(query))
@@ -137,8 +166,7 @@
 
               resultsContainer.innerHTML = "";
 
-              var correctedQueryElement =
-                document.getElementById("corrected-query");
+              var correctedQueryElement = document.getElementById("corrected-query");
               if (data.corrected_query && data.corrected_query !== query) {
                 correctedQueryElement.innerHTML = `Did you mean: <strong><a href="#" id="corrected-query-link">${data.corrected_query}</a></strong>?`;
 
@@ -146,42 +174,61 @@
                   .getElementById("corrected-query-link")
                   .addEventListener("click", function (event) {
                     event.preventDefault();
-                    document.getElementById("search-input").value =
-                      data.corrected_query;
+                    document.getElementById("search-input").value = data.corrected_query;
                     searchRecipes(data.corrected_query);
                   });
               } else {
                 correctedQueryElement.innerHTML = "";
               }
-              console.log(data.results);
+
               data.results.forEach((recipe) => {
                 var resultDiv = document.createElement("div");
                 resultDiv.classList.add("result-item");
 
                 // Create a clickable link for each recipe
                 var resultLink = document.createElement("a");
-
-                // Ensure the recipe ID is correctly passed here
-                resultLink.href = `recipe_details?recipe_id=${recipe.RecipeId}`; // Ensure 'recipe.id' is correctly populated
-                console.log(`recipe_details?recipe_id=${recipe.RecipeId}`);
-                resultLink.innerHTML = ` 
+                resultLink.href = `recipe_details?recipe_id=${recipe.RecipeId}`;
+                resultLink.innerHTML = `
                   <div class="result-details">
-                      <h3>${recipe.Name}</h3>
-                      <p>${recipe.Description}</p>
-                      <p><strong>Author:</strong> ${recipe.AuthorName}</p>
-                      <p><strong>Cook Time:</strong> ${recipe.CookTime}</p>
+                    <h3>${recipe.Name}</h3>
+                    <p>${recipe.Description}</p>
+                    <p><strong>Author:</strong> ${recipe.AuthorName}</p>
+                    <p><strong>Cook Time:</strong> ${recipe.CookTime}</p>
                   </div>
                   <img src="${recipe.Images}" alt="${recipe.Name}">
-              `;
+                `;
 
                 resultDiv.appendChild(resultLink);
                 resultsContainer.appendChild(resultDiv);
               });
+
+              // Update search history
+              updateSearchHistory(data.search_history);
             })
             .catch((error) => {
               console.error("Error fetching recipes:", error);
             });
         }
+      }
+
+      // Function to update search history
+      function updateSearchHistory(history) {
+        var historyList = document.getElementById("history-list");
+        historyList.innerHTML = "";
+
+        history.forEach((search) => {
+          var historyItem = document.createElement("li");
+          historyItem.classList.add("history-item");
+          historyItem.textContent = search;
+
+          // Add click event to search history items
+          historyItem.addEventListener("click", function () {
+            document.getElementById("search-input").value = search;
+            searchRecipes(search);
+          });
+
+          historyList.appendChild(historyItem);
+        });
       }
 
       document
@@ -192,12 +239,23 @@
           searchRecipes(query);
         });
 
-      // Logout button functionality (example)
+      // Logout button functionality
       document.getElementById("logout-button").addEventListener("click", function () {
-        // Logout logic here, such as redirecting to a logout page
         alert("Logged out successfully");
         window.location.href = "/logout"; // Adjust the URL as needed
       });
+
+      // On page load, fetch search history
+      window.onload = function () {
+        fetch("/search-history")
+          .then((response) => response.json())
+          .then((data) => {
+            updateSearchHistory(data.search_history);
+          })
+          .catch((error) => {
+            console.error("Error fetching search history:", error);
+          });
+      };
     </script>
   </body>
 </html>
